@@ -2,7 +2,7 @@ import random
 import pyautogui
 from pygame import gfxdraw
 import pygame
-from GameEngine.GameEngine.GameMeneger import *
+from GameManager import *
 from mss import mss
 import numpy as np
 
