@@ -20,6 +20,7 @@ BLUE = 0,0,255
 YELLOW = 255,255,0
 PURPURE = 255,0,255
 LIGHT_BLUE = 0,255,255
+LIME = 191, 255, 0
 
 def GetRandomColor(step=1):
     r = random.randint(0, 255)

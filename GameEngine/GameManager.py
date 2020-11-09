@@ -3,24 +3,40 @@ import sys
 from time import sleep, time
 from functools import wraps
 import ColorLib as colors
+import keyboard
 
 pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
-TICK = 0
 PREFABS = []
+
+mainCamera = None
+mainScreen = None
+
+false = False
+true = True
+
+
+delta = 0
+last = time()
+
 
 def Tick(fps=FPS):
     clock.tick(fps)
+
+
 def Clamp(n, minValue, maxValue):
     if (n < minValue):
         n = minValue
     if (n > maxValue):
         n = maxValue
     return n
+
+
 def Quit():
     pygame.quit()
     sys.exit()
+
 def Time(function):
     @wraps
     def get(*args, **kwargs):
@@ -29,18 +45,19 @@ def Time(function):
             t1 = time()
             function(*args, **kwargs)
             t2 = time()
-            t += (t2-t1)
+            t += (t2 - t1)
         return t / 2500
+
     return get
+
+
 def Instantiate():
     pass
-def Coroutuine(ticks):
-    global TICK
-    TICK += 1
-    if TICK >= ticks:
-        TICK = 0
-        print("!!!")
-        return True
+
+
+def Coroutuine(seconds):
+    pass
+
 
 class Renderer:
     def __init__(self, img_path, alpha_color=None):
@@ -57,8 +74,10 @@ class Renderer:
 
     def draw(self):
         pass
+
     def fill(self):
         pass
+
 
 class Position:
     def __init__(self, x, y):
@@ -70,6 +89,8 @@ class Position:
 
     def __str__(self):
         return str(self.getPos())
+
+
 class Size:
     def __init__(self, width, height):
         self.width = width
@@ -77,14 +98,20 @@ class Size:
 
     def getSize(self):
         return (self.width, self.height)
+
+
 class Transform:
     def __init__(self, position, rotation, size):
         self.position = position
         self.size = size
-        self.rotation = rotation # x
+        self.rotation = rotation  # x
 
 class Screen:
-    def __init__(self, width, height, background=None, color=colors.WHITE, title="Default Name", icon=None, resizeable=False):
+    def __init__(self, width, height, background=None, color=colors.WHITE, title="Default Name", icon=None,
+                 resizeable=False, showFps=True):
+
+        global mainScreen
+
         """
         width, height - scale
         color - background
@@ -96,33 +123,40 @@ class Screen:
         self.height = height
         self.color = color
         self.back = background
-        if (background != None) : self.back = pygame.image.load(str(background))
-        self.title = title
-        self.icon = None
-        if (icon != None) : self.icon = pygame.image.load(icon)
+        if (background != None): self.back = pygame.image.load(str(background))
+        self.__title = title
+        self.__icon = None
+        if (icon != None): self.icon = pygame.image.load(icon)
         self.resizeable = resizeable
+        self.showFps = showFps
+
         self.screen = self.createScreen()
 
+        mainScreen = self
+
     def createScreen(self):
-        sc = pygame.display.set_mode([self.width, self.height], (lambda resize: pygame.RESIZABLE if resize else False)(self.resizeable))
+        sc = pygame.display.set_mode([self.width, self.height],
+                                     (lambda resize: pygame.RESIZABLE if resize else False)(self.resizeable))
         sc.fill(self.color)
-        pygame.display.set_caption(self.title)
-        if (self.icon != None):
+        pygame.display.set_caption(self.__title)
+        if (self.__icon != None):
             pygame.display.set_icon(self.icon)
         pygame.display.flip()
         return sc
 
     def getInfo(self):
-        return {"size" : (self.width, self.height),
-                "color" : self.color,
-                "icon" : self.icon,
-                "title" : self.title,
-                "resizeable" : self.resizeable}
+        return {"size": (self.width, self.height),
+                "color": self.color,
+                "icon": self.icon,
+                "title": self.title,
+                "resizeable": self.resizeable}
 
     def setTitle(self, newTitle):
+        self.__title = str(newTitle)
         pygame.display.set_caption(str(newTitle))
 
     def setIcon(self, newIcon):
+        self.__icon = newIcon
         pygame.display.set_icon(pygame.image.load(str(newIcon)))
 
     def rescale(self, newWidth, newHeight):
@@ -131,25 +165,57 @@ class Screen:
         return self.createScreen()
 
     def drawBackGround(self):
-        if self.back != None:
+        if (type(self.back) == GameObject):
+            self.draw(self.back)
+        elif (type(self.back) == str):
             self.blit(self.back, [0, 0])
         else:
             self.fill()
 
-    def blit(self, obj, position):
+    def draw(self, obj, position):
         self.screen.blit(obj.image, position)
 
+    def blit(self, image, position):
+        self.screen.blit(image, position)
+
     def fill(self, color=None):
-        if color == None : color = self.color
+        if color == None: color = self.color
         self.screen.fill(color)
 
     def flip(self):
         pygame.display.flip()
 
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, newTitle):
+        self.setTitle(newTitle)
+
+    @title.getter
+    def title(self):
+        return self.__title
+
+    @property
+    def icon(self):
+        return self.__icon
+
+    @icon.setter
+    def icon(self, newIcon):
+        self.setIcon(newIcon)
+
+    @icon.getter
+    def icon(self):
+        return self.__icon
+
 class Camera:
     def __init__(self, screen):
+        global mainCamera
+
         self.objects_on_scene = []
         self.screen = screen
+        mainCamera = self
 
     def draw(self, gameobj):
         gameobj._PrepForFrame()
@@ -171,8 +237,9 @@ class Camera:
             self.draw(gameobj)
         self.screen.flip()
 
+
 class GameObject:
-    def __init__(self, renderer, transform, camera, rigitbody=None):
+    def __init__(self, renderer, transform, camera, rigidbody=None):
 
         self.transform = transform
         self.x = transform.position.x
@@ -188,11 +255,11 @@ class GameObject:
         self.__img = self.image
 
         self.__rotate()
-        if (self.transform.size != (1,1)):
+        if (self.transform.size != (1, 1)):
             self.Scale(transform.size.width, transform.size.height)
 
         self.camera = camera
-        self.rigitbody = rigitbody
+        self.rigidbody = rigidbody
 
         self.camera.objects_on_scene.append(self)
 
@@ -218,16 +285,16 @@ class GameObject:
         self.renderer.setAlpha()
 
     def draw(self):
-        self.camera.screen.blit(self, [self.x, self.y])
+        self.camera.screen.draw(self, [self.x, self.y])
 
     def _PrepForFrame(self):
-        if self.rigitbody != None:
-            self.rigitbody.AddForce(self.rigitbody._v, self.rigitbody._f, self.rigitbody._m)
-            self.rigitbody.Gravity()
+        if self.rigidbody != None:
+            self.rigidbody.AddForce(self.rigidbody._v, self.rigidbody._f, self.rigidbody._m)
+            self.rigidbody.Gravity()
 
     def move(self, x=0, y=0):
-        self.x += x
-        self.y += y
+        self.x += x * delta
+        self.y += y * delta
         self.transform.position.x = self.x
         self.transform.position.y = self.y
 
@@ -237,6 +304,7 @@ class GameObject:
     def MoveTo(self, x, y):
         pass
 
+
 class Vector:
     def __init__(self, x, y):
         self.x = x
@@ -245,11 +313,16 @@ class Vector:
     def __str__(self):
         return str((self.x, self.y))
 
+    def __mul__(self, other):
+        return Vector(self.x * other, self.y * other)
+
+
 KINEMATIC = -1
 STATIC = 0
 
-class Rigitbody:
-    def __init__(self, gameobj, weight, mode = KINEMATIC, collider=None):
+
+class Rigidbody:
+    def __init__(self, gameobj, weight, mode=KINEMATIC, collider=None):
         self.obj = gameobj
         self.weight = weight
         self.obj = gameobj
@@ -285,13 +358,11 @@ class Rigitbody:
         self._breaked = False
 
     def Gravity(self):
-        if not self._breaked and self.mode == KINEMATIC:
+        if not self._breaked and self.mode == KINEMATIC and not self.collider.OnCollisionEnter():
             self.downVelocity += self.fallVelocity
             vel = (self.weight * (self.fallVelocity + self.downVelocity) * self.g)
-            self.obj.move( 0,  vel )
+            self.obj.move(0, vel)
             self.velocity.y += vel
-            #print("vel = ", self.velocity)
-        #print("Now is", self.obj.transform.position)
 
     def AddForce(self, vector, force, mode="Force"):
         self._f = force
@@ -303,28 +374,33 @@ class Rigitbody:
         self.force = force
         self.__i += 1
 
-        addforcecore = (lambda curforce, n : curforce * (lambda n: 1 if n > 0 else (-1 if n < 0 else 0))(n)) # if not self._breaked else 0
+        addforcecore = (lambda curforce, n: curforce * (lambda n: 1 if n > 0 else (-1 if n < 0 else 0))(
+            n))  # if not self._breaked else 0
+
         def Force(curforce):
             if mode == 'Linear':
-                self.obj.move( addforcecore(curforce ,vector.x) )
-                self.obj.move( 0, addforcecore(curforce, vector.y) )
+                self.obj.move(addforcecore(curforce, vector.x))
+                self.obj.move(0, addforcecore(curforce, vector.y))
             elif mode == 'Force':
-                self.obj.move( addforcecore(curforce, vector.x) )
-                self.obj.move(0, addforcecore(curforce, vector.y) )
+                self.obj.move(addforcecore(curforce, vector.x))
+                self.obj.move(0, addforcecore(curforce, vector.y))
                 curforce -= self.forceG
-                # if (curforce <= 0):
-                #     curforce = 0
-                curforce = (curforce ** 2) ** 0.5
+                curforce = abs(curforce)
 
         self.force -= self.forceG * self.__i
-        self.force = Clamp(self.force, 0, 999)
-        #print(self.force)
+        self.force = (lambda f: f if f >= 0 else 0)(self.force)
         self.velocity.x += addforcecore(self.force, vector.x)
         self.velocity.y += addforcecore(self.force, vector.y)
-        #print("vel = ", self.velocity)
         return Force(self.force)
 
+    def Bounce(self):
+        #self.velocity = Vector(self.velocity.x, -self.velocity.y)
+        pass
+
+
 COLLIDERS = []
+
+
 class Collider:
     def __init__(self, object, size=None, position=None):
         self.object = object
@@ -370,19 +446,19 @@ class Collider:
         a.x <= b.x and a.x >= b.x1
         """
         self.pos = self.__getPoint()
+
         def collision():
             return (
-            (self.pos.x >= other.pos.x and self.pos.x <= other.pos.x + other.size.width) or
-            (self.pos.x + self.size.width >= other.pos.x and self.pos.x + self.size.width <= other.pos.x + other.size.width)) and \
-                \
-            ((self.pos.y >= other.pos.y and self.pos.y <= other.pos.y + other.size.height) or
-            (self.pos.y + self.size.height >= other.pos.y and self.pos.y + self.size.height <= other.pos.y + other.size.height)
+                           (self.pos.x >= other.pos.x and self.pos.x <= other.pos.x + other.size.width) or
+                           (
+                                       self.pos.x + self.size.width >= other.pos.x and self.pos.x + self.size.width <= other.pos.x + other.size.width)) and \
+ \
+                   ((self.pos.y >= other.pos.y and self.pos.y <= other.pos.y + other.size.height) or
+                    (
+                                self.pos.y + self.size.height >= other.pos.y and self.pos.y + self.size.height <= other.pos.y + other.size.height)
                     )
-        if (
-                collision()
-        ):
-            return True
-        return False
+
+        return collision()
 
     def OnCollisionEnterAt(self, collider):
         if not self.__collided:
@@ -391,9 +467,24 @@ class Collider:
             if not r:
                 self.__collided = False
             else:
-                self._other = collider
+
+                vector = (0, 0)
+
+                if self.pos.y + self.transform.size.height < \
+                    collider.pos.y + collider.transform.size.height and \
+                    self.pos.y + self.transform.size.height < \
+                    collider.pos.y:
+                    vector = (0, 1)
+
+                elif self.pos.y > \
+                    collider.pos.y + collider.transform.size.height and \
+                    self.pos.y + self.transform.size.height < \
+                    collider.pos.y + collider.transform.size:
+                    vector = (0, 1)
+
+                    self._other = collider
                 print("--- collided")
-            return r
+            return r    # overlapped, collider, vector
 
     def __onCollisionEnter(self):
         for collider in COLLIDERS:
@@ -406,13 +497,14 @@ class Collider:
 
     def OnCollisionEnter(self):
         if self.__onCollisionEnter():
-            if (self.object.rigitbody.mass_center.x < self._other.object.x or self.object.rigitbody.mass_center.x > self._other.object.x + self._other.object.size.width and
-            self.object.rigitbody.mass_center.y < self._other.object.y):
-                print("STOP!")
-                #print()
-                self.object.rigitbody.StopPhisics()
-                #self.object.Rotate(45)
-                self._other.object.rigitbody.StopPhisics()
+            # if (
+            #         self.object.rigidbody.mass_center.x < self._other.object.x or
+            #         self.object.rigidbody.mass_center.x > self._other.object.x + self._other.object.size.width and
+            #         self.object.rigidbody.mass_center.y < self._other.object.y):
+            #     print("STOP!")
+            self.object.rigidbody.StopPhisics()
+            return True
+        return False
 
     def __onCollisionExit(self):
         pass
@@ -426,3 +518,69 @@ class ParticleSystem:
     def __createPart(self):
         pass
 
+def write():
+    pass
+
+
+def run(update):
+
+    # mainCamera = Camera()
+
+    def inner():
+
+        global delta, last
+
+        while True:
+
+            delta = time() - last
+            delta *= 60
+            last = time()
+
+            #print(delta)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    Quit()
+
+            update()
+            if (not mainScreen is None and mainScreen.showFps): mainScreen.title = clock.get_fps()
+            if (not mainCamera is None): mainCamera.drawAll()
+
+            clock.tick(FPS)
+
+    return inner
+
+
+class Input:
+
+    __pressed = false
+    @staticmethod
+    def GetKey(key):
+        if type(key) is str:
+            return keyboard.is_pressed(key)
+        return false
+
+    @staticmethod
+    def GetKeyDown(key):
+        if type(key) is str:
+            pressed = keyboard.is_pressed(key)
+            if not Input.__pressed:
+                if pressed:
+                    Input.__pressed = true
+                    return true
+            else:
+                if not pressed:
+                    Input.__pressed = true
+
+        return false
+
+    # @staticmethod
+    # def GetKeyDown(key):
+    #     if not Input.__pressed:
+    #
+    #         if type(key) is str:
+    #             ret = keyboard.is_pressed(key)
+    #             Input.__pressed = ret
+    #             return ret
+    #
+    #     return false
