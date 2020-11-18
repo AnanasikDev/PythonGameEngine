@@ -2,25 +2,35 @@ import random
 import pyautogui
 from pygame import gfxdraw
 import pygame
-from GameManager import *
+from GameEngine.GameManager import *
 from mss import mss
 import numpy as np
 
-WHITE = 255,255,255
-BLACK = 0,0,0
+WHITE = 255, 255, 255
+BLACK = 0, 0, 0
 
 # RGB
 
-RED = 255,0,0
-GREEN = 0,255,0
-BLUE = 0,0,255
+RED = 255, 0, 0
+GREEN = 0, 255, 0
+BLUE = 0, 0, 255
 
 # Simple colors
 
-YELLOW = 255,255,0
-PURPURE = 255,0,255
-LIGHT_BLUE = 0,255,255
-LIME = 191, 255, 0
+YELLOW = 255, 255, 0
+PURPLE = 255, 0, 255
+LIGHT_BLUE = 0, 255, 255
+LIME = 19, 255, 0
+DARK_GREEN = 0, 128, 0
+VIOLET = 238, 130, 238
+INDIGO = 75, 0, 130
+BROWN = 139, 69, 19
+DARK_BLUE = 0, 0, 128
+AQUA = 0, 128, 128
+GREY = 128, 128, 128
+LIGHT_GREY = 211, 211, 211
+OLIVE = 128, 128, 0
+
 
 def GetRandomColor(step=1):
     r = random.randint(0, 255)
@@ -29,13 +39,15 @@ def GetRandomColor(step=1):
     g -= g % step
     b = random.randint(0, 255)
     b -= b % step
+    return r, g, b
 
-    return (r, g, b)
 
 ALL = 3
 B = 0
 G = 1
 R = 2
+
+
 def ChangeColor( color, G=5, mode=ALL):
     r, g, b = color
     r1 = random.randint(-G, G)

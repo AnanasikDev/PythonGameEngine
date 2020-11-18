@@ -1,29 +1,31 @@
 import pygame
-import GameManager as manager
-import ColorLib as colors
+from GameEngine.GameManager import *
+import GameEngine.ColorLib as colors
 
-manager.FPS = 60
-screen = manager.Screen(1000, 800, color=colors.LIME, resizeable=True)
-cam = manager.Camera(screen)
+init()
+screen = Screen(1000, 300, color=colors.BLACK)
+cam = Camera(screen)
 
-ball = manager.GameObject(manager.Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple0.png", colors.WHITE),
-                          manager.Transform(manager.Position(200, 180), rotation=0, size=manager.Size(20, 20)), cam)
-ball.rigidbody = manager.Rigidbody(ball, 0.05)
-ball.rigidbody.collider = manager.Collider(ball)
+ball = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple0.png", colors.WHITE),
+                          Transform(Vector(200, 180), rotation=0, size=Vector(20, 20)))
+ball.rigidbody = Rigidbody(ball, 0.05)
+ball.rigidbody.collider = Collider(ball)
 
 
-b = manager.GameObject(manager.Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple0.png", colors.WHITE),
-                          manager.Transform(manager.Position(100, 500), rotation=0, size=manager.Size(100, 20)), cam)
-b.rigidbody = manager.Rigidbody(b, 0.05, mode=manager.STATIC)
-b.rigidbody.collider = manager.Collider(b)
-# print(type("hello"))
-ball.rigidbody.AddForce(manager.Vector(0, -1), 3)
+b = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple1.png", colors.WHITE),
+                          Transform(Vector(100, 500), rotation=0, size=Vector(100, 20)))
+b.rigidbody = Rigidbody(b, 0.05, mode=STATIC)
+b.rigidbody.collider = Collider(b)
 
-@manager.run
+b = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple1.png", colors.WHITE),
+                          Transform(Vector(500, 200), rotation=0, size=Vector(20, 100)))
+b.rigidbody = Rigidbody(b, 0.05, mode=STATIC)
+b.rigidbody.collider = Collider(b)
+ball.rigidbody.AddForce(Vector(1, 0), 0)
+
+ball.rigidbody.AddForce(Vector(1, 1), 2.5)
+@run
 def run():
-    # print(manager.Input.GetKeyDown("e"))
-    if ball.rigidbody.collider.OnCollisionEnter():
-        ball.rigidbody.Bounce()
-        print("B")
+    pass
 
 run()
