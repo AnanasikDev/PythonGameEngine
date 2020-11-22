@@ -359,7 +359,7 @@ class GameObject:
 
     def _PrepForFrame(self):
         if self.rigidbody != None:
-            self.rigidbody.AddForce(self.rigidbody._v, self.rigidbody._f, self.rigidbody._m)
+            self.rigidbody._addForce()
             self.rigidbody.Gravity()
 
     def move(self, x=0, y=0):
@@ -382,15 +382,15 @@ class Rigidbody:
     def __init__(self, gameobj, mass=0.05, mode=KINEMATIC, collider=None):
         """
         :param gameobj: object for attach rigidbody to
-        :param weight: the weigth of object (0.05 normally)
+        :param mass: the mass of object (0.05 normally)
         :param mode: KINEMATIC is able to fall by gravity force; STATIC is static object, that does not use gravity
         :param collider: attached collider (optional)
 
-        The attached ridigbody to some object gives ability to use force and gravity.
+        The attached rigidbody to some object gives ability to use force and gravity.
         --------
         Settings
         --------
-        weight - the weigth of object (0.05 normally)
+        weight - the mass of object (0.05 normally)
         fallVelocity - fall acceleration
         downVelocity - current fall velocity by gravity force
         """
@@ -413,9 +413,7 @@ class Rigidbody:
         self.__i = 0
         self._broken = False
 
-        self._f = 0
-        self._m = ""
-        self._v = Vector(0, 0)
+        self._forces = []
 
     def Break(self):
         self.velocity = Vector(0, 0)
@@ -435,35 +433,19 @@ class Rigidbody:
             self.obj.move(0, vel)
             self.velocity.y += vel
 
-    def AddForce(self, vector, force=1, mode="Force"):
-        self._f = force
-        self._v = vector
-        self._m = mode
-        return self._addForce(vector, force, mode)
+    def AddForce(self, vector, force=1):
+        self._forces.append(vector * force)
+        return self._addForce()
 
-    def _addForce(self, vector, force, mode="Force"):
-        self.force = force
-        self.__i += 1
+    def _addForce(self):
 
-        addforcecore = (lambda curforce, n: curforce * (lambda n: 1 if n > 0 else (-1 if n < 0 else 0))(
-            n))  # if not self._broken else 0
+        def Addforce(vector):
+            self.obj.transform.Translate(vector.x, vector.y)
+            vector.x *= (9/10)
+            vector.y *= (9/10)
 
-        def Force(curforce):
-            self.obj.move(addforcecore(curforce, vector.x), addforcecore(curforce, vector.y))
-            # self.obj.move(0, addforcecore(curforce, vector.y))
-            curforce -= self.forceG
-            curforce = abs(curforce)
-            return curforce
-
-        self.force -= self.forceG * self.__i
-        self.force = (lambda f: f if f >= 0 else 0)(self.force)
-        self.velocity.x += addforcecore(self.force, vector.x)
-        self.velocity.y += addforcecore(self.force, vector.y)
-        return Force(self.force)
-
-    def Bounce(self):
-        #self.velocity = Vector(self.velocity.x, -self.velocity.y)
-        pass
+        for f in self._forces:
+            Addforce(f)
 
 
 COLLIDERS = []

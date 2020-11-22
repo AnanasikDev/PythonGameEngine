@@ -27,7 +27,11 @@ text = Text("Physical game engine by Ananasik", Vector.zero(), 50, colors.PURPLE
 @run
 def run():
     if Input.GetKeyDown('a'):
-        ball.rigidbody.AddForce(Vector(-1, 0), 5)
+        ball.rigidbody.AddForce(Vector(-1, 0), 1)
     if Input.GetKeyDown('d'):
-        ball.rigidbody.AddForce(Vector(1, 0), 5)
+        ball.rigidbody.AddForce(Vector(1, 0), 1)
+    if Input.GetKeyDown('w'):
+        ball.rigidbody.AddForce(Vector(0, -1), 1)
+    if Input.GetKeyDown('s'):
+        ball.rigidbody.AddForce(Vector(0, 1), 1)
 run()
