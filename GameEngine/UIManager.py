@@ -2,6 +2,7 @@ from GameEngine.GameManager import *
 from GameEngine.ColorLib import BLACK, WHITE
 import pygame
 
+
 class Text:
     def __init__(self, text, position, font_size=30,  color=BLACK):
         self.text = text

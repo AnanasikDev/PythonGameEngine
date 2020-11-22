@@ -20,7 +20,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9253c242-7f27-43f0-89be-013f023b9972" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GameEngine/GameManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/GameEngine/GameManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GameEngine/Ideas.txt" beforeDir="false" afterPath="$PROJECT_DIR$/GameEngine/Ideas.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GameEngine/Test.py" beforeDir="false" afterPath="$PROJECT_DIR$/GameEngine/Test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GameEngine/UIManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/GameEngine/UIManager.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -157,9 +161,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.Test" />
+        <item itemvalue="Python.Test (1)" />
         <item itemvalue="Python.GameManager" />
         <item itemvalue="Python.TimeManager" />
-        <item itemvalue="Python.Test (1)" />
         <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
@@ -191,30 +195,34 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="549" y="167" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1605512151640" />
-    <state width="1515" height="180" key="GridCell.Tab.0.bottom" timestamp="1606034618603">
+    <state width="1515" height="170" key="GridCell.Tab.0.bottom" timestamp="1606069999025">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1515" height="180" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1606034618603" />
-    <state width="1515" height="180" key="GridCell.Tab.0.center" timestamp="1606034618603">
+    <state width="1515" height="170" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1606069999025" />
+    <state width="1515" height="170" key="GridCell.Tab.0.center" timestamp="1606069999024">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1515" height="180" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1606034618603" />
-    <state width="1515" height="180" key="GridCell.Tab.0.left" timestamp="1606034618603">
+    <state width="1515" height="170" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1606069999024" />
+    <state width="1515" height="170" key="GridCell.Tab.0.left" timestamp="1606069999024">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1515" height="180" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1606034618603" />
-    <state width="1515" height="180" key="GridCell.Tab.0.right" timestamp="1606034618603">
+    <state width="1515" height="170" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1606069999024" />
+    <state width="1515" height="170" key="GridCell.Tab.0.right" timestamp="1606069999025">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1515" height="180" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1606034618603" />
-    <state x="277" y="57" key="SettingsEditor" timestamp="1605163811949">
+    <state width="1515" height="170" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1606069999025" />
+    <state x="277" y="57" key="SettingsEditor" timestamp="1606052679947">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="277" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1605163811949" />
+    <state x="277" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1606052679947" />
     <state x="45" y="0" width="1225" height="602" key="dock-window-1" timestamp="1605779196911">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="45" y="0" width="1225" height="602" key="dock-window-1/0.0.1536.824@0.0.1536.824" timestamp="1605779196911" />
+    <state x="431" y="145" key="search.everywhere.popup" timestamp="1606043084232">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="431" y="145" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1606043084232" />
     <state x="491" y="324" key="vcs.readOnlyHandler.ReadOnlyStatusDialog" timestamp="1605163751327">
       <screen x="0" y="0" width="1536" height="824" />
     </state>

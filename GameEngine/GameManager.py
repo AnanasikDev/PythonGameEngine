@@ -1,13 +1,19 @@
 # Import libs
 import pygame
 import sys
-from time import sleep, time
+from time import sleep, time, perf_counter
 from functools import wraps
 import GameEngine.ColorLib as colors
 import keyboard
 import platform
+from numba import njit
 
 assert not platform.python_compiler() is None
+
+def get_info():
+    print("python version is", platform.python_version())
+    print("python compiler is", platform.python_compiler())
+    print("system is", platform.system())
 
 pygame.init()
 PREFABS = []
@@ -152,9 +158,11 @@ class Transform:
         self.rotation = rotation
 
     def Translate(self, x_offset, y_offset):
-        self.position.x += x_offset * delta
-        self.position.y += y_offset * delta
+        self.position += Vector(x_offset * delta, y_offset * delta)
         return self.position
+
+    def TranslateAt(self, x, y):
+        self.position = Vector(x, y)
 
     def Rescale(self, width, height):
         self.size.x = width
@@ -360,18 +368,10 @@ class GameObject:
     def _PrepForFrame(self):
         if self.rigidbody != None:
             self.rigidbody._addForce()
+            # s = perf_counter()
             self.rigidbody.Gravity()
-
-    def move(self, x=0, y=0):
-        # self.transform.position.x += x * delta
-        # self.transform.position.y += y * delta
-        self.transform.position += Vector(x * delta, y * delta)
-
-    def moveAt(self, x, y):
-        self.transform.position = Vector(x, y)
-
-    def MoveTo(self, x, y):
-        pass
+            # e = perf_counter()
+            # print(e - s)
 
 
 KINEMATIC = -1
@@ -379,6 +379,17 @@ STATIC = 0
 
 
 class Rigidbody:
+
+    """
+    global settings
+
+    fall_acceleration - fall acceleration factor for each object
+    mass_factor - the factor of mass for each object
+    """
+
+    fall_acceleration = 9.81
+    mass_factor = 1
+
     def __init__(self, gameobj, mass=0.05, mode=KINEMATIC, collider=None):
         """
         :param gameobj: object for attach rigidbody to
@@ -390,28 +401,31 @@ class Rigidbody:
         --------
         Settings
         --------
+        obj - object, Rigidbody attached to
         weight - the mass of object (0.05 normally)
-        fallVelocity - fall acceleration
+        fall_acceleration - fall acceleration factor
         downVelocity - current fall velocity by gravity force
+        g - factor of fall (0.2 is normal) as more it is as fast it falls
+        mode - KINEMATIC is able to fall by gravity force; STATIC is static object,
+            that does not use gravity, but can be forced
+        forces - the list of forces, attached to this object. Uses by order
+        use_physics - does engine give ability to use physics or not (True is default)
         """
         self.obj = gameobj
-        self.mass = mass
-        self.obj = gameobj
+        self.mass = mass * Rigidbody.mass_factor
         self.downVelocity = 0
-        self.fallVelocity = 9.81
+        self.fall_acceleration = Rigidbody.fall_acceleration
         self.g = 0.2
         self.collider = collider
         self.mass_center = Vector(self.obj.transform.size.x / 2, self.obj.transform.size.y / 2)
+        self.use_physics = True
 
         self.mode = mode
 
         self.velocity = Vector(0, 0)
 
-        self.forceG = 0.04
-        self.force = 0
-
         self.__i = 0
-        self._broken = False
+        self.__broken = False
 
         self._forces = []
 
@@ -421,17 +435,22 @@ class Rigidbody:
 
     def StopPhysics(self):
         self.Break()
-        self._broken = True
+        self.__broken = True
+        self.use_physics = False
 
     def StartPhysics(self):
-        self._broken = False
+        self.__broken = False
+        self.use_physics = True
 
     def Gravity(self):
-        if not self._broken and self.mode == KINEMATIC and not self.collider.OnCollisionEnter():
-            self.downVelocity += self.fallVelocity
-            vel = (self.mass * (self.fallVelocity + self.downVelocity) * self.g)
-            self.obj.move(0, vel)
-            self.velocity.y += vel
+        # self.collider.OnCollisionEnter()
+        # self.collider.OnCollisionExit()
+        self.collider.OnCollisionEnter()
+        if not self.__broken and self.mode in (KINEMATIC, "KINEMATIC") and self.use_physics:
+            self.downVelocity += self.fall_acceleration
+            vel = (self.mass * (self.fall_acceleration + self.downVelocity) * self.g)
+            self.obj.transform.Translate(0, vel)
+            self.downVelocity += vel
 
     def AddForce(self, vector, force=1):
         self._forces.append(vector * force)
@@ -464,7 +483,7 @@ class Collider:
         p1 - left-up point
         p4 - right-bottom point
         """
-        self.object = object
+        self.obj = object
         self.transform = object.transform
 
         """Size initialization"""
@@ -477,18 +496,17 @@ class Collider:
         if (position != None):
             self.transform.position = position
 
-        self.pos = self.__getPoint()
         self.__collided = False
         COLLIDERS.append(self)
         self._other = None
 
         """Collision points initialization"""
-        self.p1 = self.pos
-        self.p4 = self.pos + self.size
+        pos = self.__getPoint()
+        self.p1 = pos
+        self.p4 = pos + self.size
 
     def getFreshData(self):
         """Updates info about collider"""
-        self.pos = self.__getPoint()
         self.p1 = self.pos
         self.p4 = self.pos + self.size
 
@@ -498,9 +516,8 @@ class Collider:
         return vector
 
     def __getPoint(self):
-        p = self.object.transform.position
-        self.pos = p
-        return self.pos
+        p = self.obj.transform.position
+        return p
 
     def __overLapped(self, other):
         """
@@ -514,15 +531,15 @@ class Collider:
         a.x >= b.x and a.x <= b.x1
         a.x <= b.x and a.x >= b.x1
         """
-        self.pos = self.__getPoint()
+        self.p1 = self.__getPoint()
 
         def collision():
             return (
-               (self.pos.x >= other.pos.x and self.pos.x <= other.pos.x + other.size.x) or
-               (self.pos.x + self.size.x >= other.pos.x and self.pos.x + self.size.x <= other.pos.x + other.size.x)) and \
+               (self.p1.x >= other.p1.x and self.p1.x <= other.p1.x + other.size.x) or
+               (self.p1.x + self.size.x >= other.p1.x and self.p1.x + self.size.x <= other.p1.x + other.size.x)) and \
 \
-                ((self.pos.y >= other.pos.y and self.pos.y <= other.pos.y + other.size.y) or
-                (self.pos.y + self.size.y >= other.pos.y and self.pos.y + self.size.y <= other.pos.y + other.size.y))
+                ((self.p1.y >= other.p1.y and self.p1.y <= other.p1.y + other.size.y) or
+                (self.p1.y + self.size.y >= other.p1.y and self.p1.y + self.size.y <= other.p1.y + other.size.y))
 
         return collision()
 
@@ -532,30 +549,12 @@ class Collider:
             r = self.__overLapped(collider)
             if not r:
                 self.__collided = False
-            # else:
-            #
-            #     vector = (0, 0)
-            #
-            #     if self.pos.y + self.transform.size.height < \
-            #         collider.pos.y + collider.transform.size.height and \
-            #         self.pos.y + self.transform.size.height < \
-            #         collider.pos.y:
-            #         vector = (0, 1)
-            #
-            #     elif self.pos.y > \
-            #         collider.pos.y + collider.transform.size.height and \
-            #         self.pos.y + self.transform.size.height < \
-            #         collider.pos.y + collider.transform.size:
-            #         vector = (0, 1)
-            #
-            #         self._other = collider
-            #     print("--- collided")
             return r    # overlapped, collider, vector
 
     def __onCollisionEnter(self):
         for collider in COLLIDERS:
             if collider != self:
-                if (self.OnCollisionEnterAt(collider)):
+                if self.OnCollisionEnterAt(collider):
                     print("--- collided -")
                     self._other = collider
                     return True
@@ -563,33 +562,43 @@ class Collider:
 
     def OnCollisionEnter(self):
         if self.__onCollisionEnter():
-            # if (
-            #         self.object.rigidbody.mass_center.x < self._other.object.x or
-            #         self.object.rigidbody.mass_center.x > self._other.object.x + self._other.object.size.width and
-            #         self.object.rigidbody.mass_center.y < self._other.object.y):
-            #     print("STOP!")
-
-            # print(self.pos, self.size, self._other.pos, self._other.size)
-            # print((self.pos + (self.size / 2)))
-            # print((self._other.pos + (self._other.size / 2)))
-            # vector = (self.pos + (self.size / 2)) - (self._other.pos + (self._other.size / 2))
-            # print(vector)
-
             vector = self.__get_vector()
-            # vector = Vector(0, -1)
             print("Collided", vector)
             if vector.y == -1:
                 print("STOP PHYS")
-                self.object.rigidbody.StopPhysics()
-                # self.object.transform.position.y = self._other.p1.y - self.object.transform.size.y - 5
-                self.object.moveAt(self.object.transform.position.x, self._other.p1.y - self.object.transform.size.y)
-                # self.object.move(0, -4)
+                self.obj.rigidbody.StopPhysics()
+                self.obj.transform.TranslateAt(self.obj.transform.position.x, self._other.p1.y - self.obj.transform.size.y)
 
             return True
         return False
 
     def __onCollisionExit(self):
-        pass
+
+        def On():
+            for o in COLLIDERS:
+                if self.__overLapped(o):
+                    return True
+            return False
+
+        # print(self._other)
+        if self._other is not None:
+            if not On():
+                self._other = None
+                return True
+        return False
+
+    def OnCollisionExit(self):
+        e = self.__onCollisionExit()
+        if e:
+            if self.__collided:
+                self.obj.rigidbody.StartPhysics()
+                self.__collided = False
+            print("START PHYS")
+            pass
+        return e
+
+    def OnCollisionStay(self):
+        return self.__onCollisionEnter()
 
 
 class ParticleSystem:
