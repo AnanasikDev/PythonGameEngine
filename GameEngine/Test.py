@@ -2,30 +2,32 @@ import pygame
 from GameEngine.GameManager import *
 import GameEngine.ColorLib as colors
 
-init()
-screen = Screen(1000, 300, color=colors.BLACK)
+screen = Screen(1000, 700, color=colors.BLACK, resizeable=True)
 cam = Camera(screen)
 
 ball = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple0.png", colors.WHITE),
-                          Transform(Vector(200, 180), rotation=0, size=Vector(20, 20)))
-ball.rigidbody = Rigidbody(ball, 0.05)
+                          Transform(Vector(200, 180)))
+ball.rigidbody = Rigidbody(ball)
 ball.rigidbody.collider = Collider(ball)
 
 
 b = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple1.png", colors.WHITE),
-                          Transform(Vector(100, 500), rotation=0, size=Vector(100, 20)))
+                          Transform(Vector(100, 500), size=Vector(100, 20)))
 b.rigidbody = Rigidbody(b, 0.05, mode=STATIC)
 b.rigidbody.collider = Collider(b)
 
 b = GameObject(Renderer(r"C:\GitArchive\Archive\Code\Successful projects\Python\Snake\Apple1.png", colors.WHITE),
-                          Transform(Vector(500, 200), rotation=0, size=Vector(20, 100)))
+                          Transform(Vector(500, 200), size=Vector(20, 100)))
 b.rigidbody = Rigidbody(b, 0.05, mode=STATIC)
 b.rigidbody.collider = Collider(b)
-ball.rigidbody.AddForce(Vector(1, 0), 0)
 
-ball.rigidbody.AddForce(Vector(1, 1), 2.5)
+ball.rigidbody.AddForce(Vector(6, 0), 1)
+
+text = Text("Physical game engine by Ananasik", Vector.zero(), 50, colors.PURPLE)
 @run
 def run():
-    pass
-
+    if Input.GetKeyDown('a'):
+        ball.rigidbody.AddForce(Vector(-1, 0), 5)
+    if Input.GetKeyDown('d'):
+        ball.rigidbody.AddForce(Vector(1, 0), 5)
 run()

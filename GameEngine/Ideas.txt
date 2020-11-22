@@ -23,3 +23,11 @@ overlapped возвращает коллайдер
 Класс Color, поддерживаемый Renderer помимо списка/кортежа
 В рендерере возможность поменять цвет всего изображения на k (коэффициент) к цвету c
 Движение камеры
+Библиотека для отслеживания скорости работы кода (функций)
+GetKey, GetAnyKey, GetSomeKey, GetMouseButton, GetAnyMouseButton, GetSomeMouseButton, GetMousePosition, GetAxis, GetAxisRaw
+Поворот коллайдера (отслеживавть вектор по углу поворота)
+UI 
+Для нахождения любого столкновения коллайдера с определенным тегом/слоем используем filter
+Анимации
+collider & rigidbody для UI
+Коллайдер и rigidbody отдельно

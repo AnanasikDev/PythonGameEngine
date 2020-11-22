@@ -31,13 +31,13 @@ def Tick(fps=FPS):
     clock.tick(fps)
 
 
-INFINITY = True
+INFINITY = "infinity"
 
 
-def Clamp(n, minValue, maxValue = INFINITY):
-    if (n < minValue):
+def Clamp(n, minValue = INFINITY, maxValue = INFINITY):
+    if (minValue != INFINITY and n < minValue):
         n = minValue
-    if (not maxValue and n > maxValue):
+    if (maxValue != INFINITY and n > maxValue):
         n = maxValue
     return n
 
@@ -73,11 +73,63 @@ def Coroutuine(seconds):
     pass
 
 
+class Vector:
+    def __init__(self, x, y):
+        '''
+        Vector of moving relatively to itself position
+
+        x - vector of moving by x axis
+        y - vector of moving by y axis
+
+        1 0 - right
+        -1 0 - left
+        0 1 - down
+        1 0 - up
+        '''
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return str((self.x, self.y))
+
+    def __mul__(self, other):
+        return Vector(self.x * other, self.y * other)
+
+    def __sub__(self, other):
+        return Vector(self.x - other.x, self.y - other.y)
+
+    def __add__(self, other):
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __truediv__(self, other):
+        return Vector(self.x / other, self.y / other)
+
+    def get(self):
+        m = (lambda x : 1 if x > 1 else (-1 if x < 0 else 0))(self.x)
+        n = (lambda y: 1 if y > 1 else (-1 if y < 0 else 0))(self.y)
+        v = Vector(m, n)
+        return v
+
+    # @property
+    # def zero(self):
+    #     return Vector(0, 0)
+    #
+    # @zero.getter
+    # def zero(self):
+    #     return Vector(0, 0)
+
+    @staticmethod
+    def zero():
+        return Vector(0, 0)
+    #__get = (lambda n: 1 if n > 0 else (-1 if n < 0 else 0))
+
+
 class Renderer:
     def __init__(self, img_path, alpha_color=None):
         self.path = img_path
         self.image = pygame.image.load(self.path)
         self.alpha_color = alpha_color
+        self.size = Vector(self.image.get_width(), self.image.get_height())
         if (self.alpha_color != None):
             self.image.set_colorkey(self.alpha_color)
 
@@ -94,10 +146,24 @@ class Renderer:
 
 
 class Transform:
-    def __init__(self, position, rotation, size):
+    def __init__(self, position, size=None, rotation=0):
         self.position = position
         self.size = size
-        self.rotation = rotation  # x
+        self.rotation = rotation
+
+    def Translate(self, x_offset, y_offset):
+        self.position.x += x_offset * delta
+        self.position.y += y_offset * delta
+        return self.position
+
+    def Rescale(self, width, height):
+        self.size.x = width
+        self.size.y = height
+        return self.size
+
+    def Rotate(self, angle):
+        self.rotation += angle
+        return self.rotation
 
 
 class Screen:
@@ -227,8 +293,8 @@ class Camera:
     def draw(self, gameobj):
         gameobj._PrepForFrame()
         if (
-                (gameobj.x + gameobj.width >= 0 or gameobj.x >= 0) and
-                (gameobj.y + gameobj.height >= 0 or gameobj.y >= 0)
+                (gameobj.transform.position.x + gameobj.transform.size.x >= 0 or gameobj.transform.position.x >= 0) and
+                (gameobj.transform.position.y + gameobj.transform.size.y >= 0 or gameobj.transform.position.y >= 0)
         ):
             gameobj.draw()
 
@@ -252,21 +318,15 @@ class GameObject:
     def __init__(self, renderer, transform, rigidbody=None):
 
         self.transform = transform
-        self.x = transform.position.x
-        self.y = transform.position.y
-        self.position = transform.position
 
-        self.width = transform.size.x
-        self.height = transform.size.y
-        self.size = transform.size
         self.renderer = renderer
+
+        if self.transform.size is None:
+            self.transform.size = self.renderer.size
 
         self.image = self.renderer.image.convert()
         self.__img = self.image
-
-        self.__rotate()
-        if (self.transform.size != (1, 1)):
-            self.Scale(transform.size.x, transform.size.y)
+        self.Scale(transform.size.x, transform.size.y)
 
         self.camera = mainCamera
         self.rigidbody = rigidbody
@@ -295,7 +355,7 @@ class GameObject:
         self.renderer.setAlpha()
 
     def draw(self):
-        self.camera.screen.draw(self, [self.x, self.y])
+        self.camera.screen.draw(self, [self.transform.position.x, self.transform.position.y])
 
     def _PrepForFrame(self):
         if self.rigidbody != None:
@@ -303,10 +363,9 @@ class GameObject:
             self.rigidbody.Gravity()
 
     def move(self, x=0, y=0):
-        self.x += x * delta
-        self.y += y * delta
-        self.transform.position.x = self.x
-        self.transform.position.y = self.y
+        # self.transform.position.x += x * delta
+        # self.transform.position.y += y * delta
+        self.transform.position += Vector(x * delta, y * delta)
 
     def moveAt(self, x, y):
         self.transform.position = Vector(x, y)
@@ -315,56 +374,16 @@ class GameObject:
         pass
 
 
-class Vector:
-    def __init__(self, x, y):
-        '''
-        Vector of moving relatively to itself position
-
-        x - vector of moving by x axis
-        y - vector of moving by y axis
-
-        1 0 - right
-        -1 0 - left
-        0 1 - down
-        1 0 - up
-        '''
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return str((self.x, self.y))
-
-    def __mul__(self, other):
-        return Vector(self.x * other, self.y * other)
-
-    def __sub__(self, other):
-        return Vector(self.x - other.x, self.y - other.y)
-
-    def __add__(self, other):
-        return Vector(self.x + other.x, self.y + other.y)
-
-    def __truediv__(self, other):
-        return Vector(self.x / other, self.y / other)
-
-    def get(self):
-        m = (lambda x : 1 if x > 1 else (-1 if x < 0 else 0))(self.x)
-        n = (lambda y: 1 if y > 1 else (-1 if y < 0 else 0))(self.y)
-        v = Vector(m, n)
-        return v
-
-    #__get = (lambda n: 1 if n > 0 else (-1 if n < 0 else 0))
-
-
 KINEMATIC = -1
 STATIC = 0
 
 
 class Rigidbody:
-    def __init__(self, gameobj, weight = 0.05, mode=KINEMATIC, collider=None):
+    def __init__(self, gameobj, mass=0.05, mode=KINEMATIC, collider=None):
         """
         :param gameobj: object for attach rigidbody to
         :param weight: the weigth of object (0.05 normally)
-        :param mode: KINEMATIC is able to fall by gravity force; Static is static object, that does not use gravity
+        :param mode: KINEMATIC is able to fall by gravity force; STATIC is static object, that does not use gravity
         :param collider: attached collider (optional)
 
         The attached ridigbody to some object gives ability to use force and gravity.
@@ -376,7 +395,7 @@ class Rigidbody:
         downVelocity - current fall velocity by gravity force
         """
         self.obj = gameobj
-        self.weight = weight
+        self.mass = mass
         self.obj = gameobj
         self.downVelocity = 0
         self.fallVelocity = 9.81
@@ -412,11 +431,11 @@ class Rigidbody:
     def Gravity(self):
         if not self._broken and self.mode == KINEMATIC and not self.collider.OnCollisionEnter():
             self.downVelocity += self.fallVelocity
-            vel = (self.weight * (self.fallVelocity + self.downVelocity) * self.g)
+            vel = (self.mass * (self.fallVelocity + self.downVelocity) * self.g)
             self.obj.move(0, vel)
             self.velocity.y += vel
 
-    def AddForce(self, vector, force, mode="Force"):
+    def AddForce(self, vector, force=1, mode="Force"):
         self._f = force
         self._v = vector
         self._m = mode
@@ -430,14 +449,11 @@ class Rigidbody:
             n))  # if not self._broken else 0
 
         def Force(curforce):
-            if mode == 'Linear':
-                self.obj.move(addforcecore(curforce, vector.x))
-                self.obj.move(0, addforcecore(curforce, vector.y))
-            elif mode == 'Force':
-                self.obj.move(addforcecore(curforce, vector.x))
-                self.obj.move(0, addforcecore(curforce, vector.y))
-                curforce -= self.forceG
-                curforce = abs(curforce)
+            self.obj.move(addforcecore(curforce, vector.x), addforcecore(curforce, vector.y))
+            # self.obj.move(0, addforcecore(curforce, vector.y))
+            curforce -= self.forceG
+            curforce = abs(curforce)
+            return curforce
 
         self.force -= self.forceG * self.__i
         self.force = (lambda f: f if f >= 0 else 0)(self.force)
@@ -583,6 +599,9 @@ class Collider:
             if vector.y == -1:
                 print("STOP PHYS")
                 self.object.rigidbody.StopPhysics()
+                # self.object.transform.position.y = self._other.p1.y - self.object.transform.size.y - 5
+                self.object.moveAt(self.object.transform.position.x, self._other.p1.y - self.object.transform.size.y)
+                # self.object.move(0, -4)
 
             return True
         return False
@@ -600,9 +619,6 @@ class ParticleSystem:
         pass
 
 
-def write():
-    pass
-
 def init():
     if mainScreen is None:
         screen = Screen()
@@ -613,7 +629,6 @@ def init():
 def run(update):
 
     def inner():
-
         global delta, last, mainCamera, mainScreen
 
         while True:
@@ -627,8 +642,8 @@ def run(update):
                     Quit()
 
             update()
-            if (not mainCamera is None and mainScreen.showFps): mainScreen.title = clock.get_fps()
-            if (not mainCamera is None): mainCamera.drawAll()
+            if (mainScreen.showFps): mainScreen.title = clock.get_fps()
+            mainCamera.drawAll()
 
             clock.tick(FPS)
 
@@ -662,3 +677,27 @@ class Input:
 
        # return keyboard.on_press()
         pass
+
+
+class Text:
+    def __init__(self, text, position, font_size=30,  color=colors.BLACK):
+        self.text = text
+        self.font_size = font_size
+        self.color = color
+        self.pos = position
+
+        self.transform = Transform(self.pos, Vector(self.font_size * len(self.text), self.font_size))
+        mainCamera.objects_on_scene.append(self)
+
+    def _PrepForFrame(self):
+        pass
+
+    def draw(self):
+        """
+        available fonts:
+        "18177.otf"
+        "19319.ttf"
+        """
+        font_type = pygame.font.Font("18177.otf", self.font_size)
+        text = font_type.render(self.text, True, self.color)
+        mainScreen.blit(text, [self.pos.x, self.pos.y])
